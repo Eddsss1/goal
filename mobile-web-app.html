@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Goal Calculator">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwN0FGRiIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+R0M8L3RleHQ+PC9zdmc+">
+    <title>Goal Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background-color: #f5f5f5;
+            max-width: 100%;
+            -webkit-text-size-adjust: 100%;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+        .calculator {
+            background-color: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 500px;
+        }
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            -webkit-appearance: none;
+            margin: 0;
+            background-color: #f8f8f8;
+        }
+        input:focus {
+            outline: none;
+            border-color: #007AFF;
+            background-color: #fff;
+        }
+        button {
+            width: 100%;
+            background-color: #007AFF;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 8px;
+            -webkit-appearance: none;
+        }
+        button:active {
+            background-color: #0051a8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            background-color: #f0f9ff;
+            border-radius: 8px;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .table {
+            margin-top: 16px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .table th, .table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .table th {
+            background-color: #f8f8f8;
+            font-weight: 600;
+        }
+        .highlight {
+            background-color: #f0f9ff;
+        }
+        #installPrompt {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-align: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Goal Line Calculator</h2>
+        <div class="input-group">
+            <label>Over 1.5 goals (%)</label>
+            <input type="number" id="prob1" min="0" max="100" step="1" value="67" inputmode="decimal">
+        </div>
+        <div class="input-group">
+            <label>Over 2.5 goals (%)</label>
+            <input type="number" id="prob2" min="0" max="100" step="1" value="39" inputmode="decimal">
+        </div>
+        <div class="input-group">
+            <label>Over 3.5 goals (%)</label>
+            <input type="number" id="prob3" min="0" max="100" step="1" value="20" inputmode="decimal">
+        </div>
+        <button onclick="calculateMedian()">Calculate</button>
+        <div id="result" class="result"></div>
+    </div>
+    <div id="installPrompt">
+        Tap share → Add to Home Screen to install
+    </div>
+    <script>
+        // Show install prompt if not in standalone mode
+        if (window.navigator.standalone !== true) {
+            document.getElementById('installPrompt').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('installPrompt').style.display = 'none';
+            }, 10000);
+        }
+
+        function findMedianBetweenLines(x1, y1, x2, y2) {
+            return x1 + (50 - y1) * (x2 - x1)/(y2 - y1);
+        }
+
+        function calculateMedian() {
+            const prob1 = parseFloat(document.getElementById('prob1').value);
+            const prob2 = parseFloat(document.getElementById('prob2').value);
+            const prob3 = parseFloat(document.getElementById('prob3').value);
+            
+            if (isNaN(prob1) || isNaN(prob2) || isNaN(prob3)) {
+                alert("Please enter valid numbers");
+                return;
+            }
+            
+            if (prob1 <= prob2 || prob2 <= prob3) {
+                alert("Error: Probabilities must be decreasing (Over 1.5 > Over 2.5 > Over 3.5)");
+                return;
+            }
+
+            let median = null;
+            let medianRange = "";
+
+            if (prob1 > 50 && prob2 < 50) {
+                median = findMedianBetweenLines(1.5, prob1, 2.5, prob2);
+                medianRange = "between 1.5 and 2.5";
+            } else if (prob2 > 50 && prob3 < 50) {
+                median = findMedianBetweenLines(2.5, prob2, 3.5, prob3);
+                medianRange = "between 2.5 and 3.5";
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+
+            if (median === null) {
+                resultDiv.innerHTML = `
+                    <strong>No solution found</strong><br>
+                    The 50% point was not found in the given ranges. Make sure one probability is above 50% and the next is below 50%.
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <strong>Results:</strong><br>
+                    The 50% probability point is at ${median.toFixed(2)} goals ${medianRange}<br><br>
+                    <table class="table">
+                        <tr>
+                            <th>Goals</th>
+                            <th>Over %</th>
+                            <th>Under %</th>
+                        </tr>
+                        <tr>
+                            <td>1.5</td>
+                            <td>${prob1}</td>
+                            <td>${(100-prob1).toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>2.5</td>
+                            <td>${prob2}</td>
+                            <td>${(100-prob2).toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>3.5</td>
+                            <td>${prob3}</td>
+                            <td>${(100-prob3).toFixed(1)}</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>${median.toFixed(2)}</td>
+                            <td>50.0</td>
+                            <td>50.0</td>
+                        </tr>
+                    </table>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
